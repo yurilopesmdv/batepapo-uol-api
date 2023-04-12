@@ -1,6 +1,6 @@
 import express from "express"
 import cors from 'cors'
-import { MongoClient } from "mongodb"
+import { MongoClient, ObjectId } from "mongodb"
 import dotenv from 'dotenv'
 import dayjs from "dayjs"
 import Joi from "joi"
@@ -135,11 +135,63 @@ app.post("/status", async (req, res) => {
         res.status(500).send(error.message)
     }
 })
+app.delete("/messages/:id", async (req, res) => {
+    const user = req.headers.user
+    const {id} = req.params
+    try{
+        const messages = await db.collection("messages")
+        const messageExist = await messages.findOne({_id: new ObjectId(id)})
+        if(!messageExist) {
+            return res.sendStatus(404)
+        }
+        if(messageExist.from !== user) {
+            return res.sendStatus(401)
+        }
+        await messages.deleteOne({
+            _id: messageExist._id
+        })
+        res.sendStatus(200)
+    } catch(error) {
+        res.sendStatus(500)
+    }
+})
+app.put("/messages/:id", async (req, res) => {
+    const mensagem = req.body
+    const user = req.headers.user
+    const {id} = req.params
+    const validacao = mensagemSchema.validate(message)
+    if(validacao.error) {
+        return res.sendStatus(422)
+    }
+    try {   
+        const participantExist = await db.collection("participants").findOne({name: user})
+        if(!participantExist) {
+            return res.sendStatus(422)
+        }
+        const messageExist = await db.collection("messages").findOne({_id: new ObjectId(id)})
+        if(!messageExist) {
+            return res.sendStatus(404)
+        }
+        if(messageExist.from !== user) {
+            return res.sendStatus(401)
+        }
+        await db.collection("messages").updateOne({
+            _id: new ObjectId(id)}, {
+                $set: mensagem
+            })
+            res.sendStatus(201)
+    } catch(error) {
+        res.status(500).send(error.message)
+    }
+})
 
 setInterval(async () => {
     const segundos = Date.now() - 10 * 1000
     try {
-        const partInativos = await db.collection("participants").find({lastStatus: {$lte: segundos}}).toArray()
+        const partInativos = await db
+        .collection("participants")
+        .find({lastStatus: {$lte: segundos}})
+        .toArray()
         if(partInativos.length > 0) {
             const msgInatividade = partInativos.map(part => {
                 return {
@@ -154,7 +206,7 @@ setInterval(async () => {
         await db.collection("messages").insertMany(msgInatividade)
         await db.collection("participants").deleteMany({lastStatus: {$lte: segundos}})
     } catch(error) {
-        res.status(500).send(error.message)
+        
     }
 }, 15000)
 
