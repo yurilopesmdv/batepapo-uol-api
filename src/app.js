@@ -94,7 +94,7 @@ app.post("/messages", async (req, res) => {
         }
         const participantExist = await db.collection("participants").findOne({name: user})
         if(!participantExist) {
-            return res.send(409)
+            return res.send(422)
         }
         await db.collection("messages").insertOne(message)
         res.send(201)
@@ -114,7 +114,7 @@ app.get("/messages", async (req, res) => {
             return canRead || isPublic
         })
 
-        if(limit && limit !== NaN) {
+        if(limit && limit !== NaN && limit > 0) {
             return res.send(filterMessages.slice(-limit))
         }
         res.send(filterMessages)
@@ -206,7 +206,7 @@ setInterval(async () => {
         await db.collection("messages").insertMany(msgInatividade)
         await db.collection("participants").deleteMany({lastStatus: {$lte: segundos}})
     } catch(error) {
-        
+        res.status(500).send(error.message)
     }
 }, 15000)
 
