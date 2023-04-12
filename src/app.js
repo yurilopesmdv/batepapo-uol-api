@@ -113,7 +113,7 @@ app.get("/messages", async (req, res) => {
             const isPublic = type === "message"
             return canRead || isPublic
         })
-        if(limit <= 0 && (typeof limit === 'string')) {
+        if(limit <= 0 || (typeof limit === 'string')) {
             return res.sendStatus(422)
         }
         if(limit && limit !== NaN) {
@@ -159,29 +159,32 @@ app.delete("/messages/:id", async (req, res) => {
 })
 app.put("/messages/:id", async (req, res) => {
     const mensagem = req.body
-    const user = req.headers.user
+    const from = req.headers.user
     const {id} = req.params
     const validacao = mensagemSchema.validate(message)
     if(validacao.error) {
         return res.sendStatus(422)
     }
-    try {   
-        const participantExist = await db.collection("participants").findOne({name: user})
+    try {
+        const collecPart = mongoClient.collection("participants")
+        const collecMes = mongoClient.collection("messages")
+        const participantExist = await collecPart.findOne({name: from})
         if(!participantExist) {
             return res.sendStatus(422)
         }
-        const messageExist = await db.collection("messages").findOne({_id: new ObjectId(id)})
+        const messageExist = await collecMes.findOne({_id: new ObjectId(id)})
         if(!messageExist) {
             return res.sendStatus(404)
         }
-        if(messageExist.from !== user) {
+        if(messageExist.from !== from) {
             return res.sendStatus(401)
         }
-        await db.collection("messages").updateOne({
-            _id: new ObjectId(id)}, {
+        await collecMes.updateOne({
+            _id: new ObjectId(id)
+            }, {
                 $set: mensagem
             })
-            res.sendStatus(201)
+        res.sendStatus(201)
     } catch(error) {
         res.status(500).send(error.message)
     }
