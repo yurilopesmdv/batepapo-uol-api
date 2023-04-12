@@ -102,7 +102,26 @@ app.post("/messages", async (req, res) => {
         res.status(500).send(error.message)
     }
 })
-app.get("/messages")
+app.get("/messages", async (req, res) => {
+    const limit = parseInt(req.query.limit)
+    const { user } = req.headers
+    try {
+        const messages = await db.collection("messages").find().toArray()
+        const filterMessages = messages.filter(msg => {
+            const { from, to, type } = msg
+            const canRead = (to === "Todos") || (from === user) || (to === user)
+            const isPublic = type === "message"
+            return canRead || isPublic
+        })
+
+        if(limit && limit !== NaN) {
+            return res.send(filterMessages.slice(-limit))
+        }
+        res.send(filterMessages)
+    } catch (error) {
+        res.status(500).send(error.message)
+    }
+})
 app.post("/status")
 
 
