@@ -113,8 +113,10 @@ app.get("/messages", async (req, res) => {
             const isPublic = type === "message"
             return canRead || isPublic
         })
-
-        if(limit && limit !== NaN && limit > 0) {
+        if(limit <= 0 && (typeof limit === 'string')) {
+            return res.sendStatus(422)
+        }
+        if(limit && limit !== NaN) {
             return res.send(filterMessages.slice(-limit))
         }
         res.send(filterMessages)
@@ -186,27 +188,24 @@ app.put("/messages/:id", async (req, res) => {
 })
 
 setInterval(async () => {
-    const segundos = Date.now() - 10 * 1000
+    const seconds = Date.now() - 10 * 1000
     try {
-        const partInativos = await db
-        .collection("participants")
-        .find({lastStatus: {$lte: segundos}})
-        .toArray()
+        const partInativos = await db.collection("participants").find({ lastStatus: { $lte: seconds }}).toArray()
         if(partInativos.length > 0) {
-            const msgInatividade = partInativos.map(part => {
+            const msgInatividade = partInativos.map((part) => {
                 return {
                     from: part.name,
                     to:"Todos",
-                    text: "Sai da sala...",
+                    text: "sai da sala...",
                     type: "status",
                     time: dayjs().format("HH:mm:ss")
                 }
             })
         }
         await db.collection("messages").insertMany(msgInatividade)
-        await db.collection("participants").deleteMany({lastStatus: {$lte: segundos}})
+        await db.collection("participants").deleteMany({ lastStatus: { $lte: seconds }})
     } catch(error) {
-        res.status(500).send(error.message)
+        
     }
 }, 15000)
 
