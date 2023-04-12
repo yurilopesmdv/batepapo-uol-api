@@ -19,7 +19,7 @@ mongoClient.connect()
 
 
 app.post("/participants", async (req, res) => {
-    const {participant} = req.body
+    const participant = req.body
 
     const participantSchema = Joi.object({
         name: Joi.string().min(1).required(),
@@ -36,11 +36,11 @@ app.post("/participants", async (req, res) => {
         if(participantExist) {
             return res.send(409)
         }
-        await db.collection("participants").inserOne({
+        await db.collection("participants").insertOne({
             name: participant.name,
             lastStatus: Date.now()
         })
-        await db.collection("messages").inserOne({
+        await db.collection("messages").insertOne({
             from: participant.name,
             to: "Todos",
             text: "entra na sala...",
@@ -56,7 +56,15 @@ app.post("/participants", async (req, res) => {
         
 }) 
 app.get("/participants", async (req, res) => {
-    
+    try {
+        const participants = await db.collection("participants").find().toArray()
+        if(!participants) {
+            return res.status(404).send("Nenhum participante foi encontrado!")
+        }
+        res.send(participants)
+    }   catch (error){
+        res.status(500).send(error.message)
+    }
 })
 app.post("/messages")
 app.get("/messages")
