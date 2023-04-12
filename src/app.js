@@ -122,7 +122,19 @@ app.get("/messages", async (req, res) => {
         res.status(500).send(error.message)
     }
 })
-app.post("/status")
+app.post("/status", async (req, res) => {
+    const {user} = req.headers
+    try {
+        const participantExist = await db.collection("participants").findOne({name: user})
+        if(!participantExist) {
+            return res.sendStatus(404)
+        }
+        await db.collection("participants").updateOne({name: user}, {$set: {lastStatus: Date.now()}})
+        res.sendStatus(200)
+    } catch(error) {
+        res.status(500).send(error.message)
+    }
+})
 
 
 const PORT = 5000
