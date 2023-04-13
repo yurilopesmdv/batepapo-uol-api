@@ -158,7 +158,7 @@ app.delete("/messages/:id", async (req, res) => {
     }
 })
 app.put("/messages/:id", async (req, res) => {
-    const mensagem = req.body
+    const message = req.body
     const from = req.headers.user
     const {id} = req.params
     const validacao = mensagemSchema.validate(message)
@@ -182,7 +182,7 @@ app.put("/messages/:id", async (req, res) => {
         await collecMes.updateOne({
             _id: new ObjectId(id)
             }, {
-                $set: mensagem
+                $set: message
             })
         res.sendStatus(201)
     } catch(error) {
@@ -210,7 +210,7 @@ setInterval(async () => {
     } catch(error) {
         
     }
-}, 15000)
+}, 10000)
 
 const PORT = 5000
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`))
