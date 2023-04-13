@@ -113,7 +113,8 @@ app.get("/messages", async (req, res) => {
             const isPublic = type === "message"
             return canRead || isPublic
         })
-        if(limit <= 0 || (typeof limit === 'string') || isNaN(limit)) {
+
+        if(limit === NaN) {
             return res.sendStatus(422)
         }
         if(limit && limit !== NaN) {
@@ -210,7 +211,7 @@ setInterval(async () => {
     } catch(error) {
         
     }
-}, 10000)
+}, 15000)
 
 const PORT = 5000
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`))
