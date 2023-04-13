@@ -113,7 +113,7 @@ app.get("/messages", async (req, res) => {
             const isPublic = type === "message"
             return canRead || isPublic
         })
-        if(limit <= 0 || (typeof limit === 'string')) {
+        if(limit <= 0 || (typeof limit === 'string') || isNaN(limit)) {
             return res.sendStatus(422)
         }
         if(limit && limit !== NaN) {
