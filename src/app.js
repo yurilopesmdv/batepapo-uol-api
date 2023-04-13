@@ -164,11 +164,9 @@ app.put("/messages/:id", async (req, res) => {
     const {id} = req.params
 
     const message = {
-        from: from,
         to: to,
         text: text,
         type: type,
-        time: dayjs().format("HH:mm:ss"),
     }
     const validacao = mensagemSchema.validate(message)
     if(validacao.error) {
