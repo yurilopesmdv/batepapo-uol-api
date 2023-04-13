@@ -191,25 +191,26 @@ app.put("/messages/:id", async (req, res) => {
     }
 })
 
-setInterval(async () => {
-    const seconds = Date.now() - 10 * 1000
+setInterval(async() => {
+    const segundos = Date.now() - 10 * 1000
+
     try {
-        const partInativos = await db.collection("participants").find({ lastStatus: { $lte: seconds }}).toArray()
-        if(partInativos.length > 0) {
-            const msgInatividade = partInativos.map((part) => {
+        const partInative = await db.collection("participants").find({lastStatus: {$lte: segundos}}).toArray()
+        if(partInative.length > 0) {
+            const mesInative = partInative.map(part => {
                 return {
                     from: part.name,
-                    to:"Todos",
+                    to: "Todos",
                     text: "sai da sala...",
                     type: "status",
-                    time: dayjs().format("HH:mm:ss")
+                    time: dayjs().format("HH:mm:ss"),
                 }
             })
+            await db.collection("messages").insertMany(mesInative)
+            await db.collection("participants").deleteMany({lastStatus: {$lte: segundos}})
         }
-        await db.collection("messages").insertMany(msgInatividade)
-        await db.collection("participants").deleteMany({ lastStatus: { $lte: seconds }})
-    } catch(error) {
-        
+    } catch(err){
+        res.status(500).send(err.message)
     }
 }, 15000)
 
