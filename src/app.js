@@ -17,6 +17,7 @@ mongoClient.connect()
     .then(() => db = mongoClient.db())
     .catch((err) => res.status(500).send(err.message))
 
+//Validação joi
 const participantSchema = Joi.object({
     name: Joi.string().min(1).required(),
 });
@@ -27,7 +28,7 @@ const mensagemSchema = Joi.object({
     type: Joi.string().valid("message", "private_message").required(),
     time: Joi.string()
 })
-
+//rotas
 app.post("/participants", async (req, res) => {
     const participant = req.body
 
@@ -42,7 +43,7 @@ app.post("/participants", async (req, res) => {
     try {
         const participantExist = await db.collection("participants").findOne({name: participant.name})
         if(participantExist) {
-            return res.send(409)
+            return res.sendStatus(409)
         }
         await db.collection("participants").insertOne({
             name: participant.name,
@@ -67,7 +68,7 @@ app.get("/participants", async (req, res) => {
     try {
         const participants = await db.collection("participants").find().toArray()
         if(!participants) {
-            return res.status(404).send("Nenhum participante foi encontrado!")
+            return res.status(404).send("Nenhum participante adicionado!")
         }
         res.send(participants)
     }   catch (error){
@@ -104,7 +105,10 @@ app.post("/messages", async (req, res) => {
 })
 app.get("/messages", async (req, res) => {
     const limit = parseInt(req.query.limit)
-    const { user } = req.headers
+    const  user  = req.headers.user || req.headers.User
+    if(limit === NaN || limit <= 0) {
+        return res.sendStatus(422)
+    }
     try {
         const messages = await db.collection("messages").find().toArray()
         const filterMessages = messages.filter(msg => {
@@ -113,10 +117,6 @@ app.get("/messages", async (req, res) => {
             const isPublic = type === "message"
             return canRead || isPublic
         })
-
-        if(limit === NaN) {
-            return res.sendStatus(422)
-        }
         if(limit && limit !== NaN) {
             return res.send(filterMessages.slice(-limit))
         }
