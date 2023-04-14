@@ -165,7 +165,7 @@ app.delete("/messages/:id", async (req, res) => {
 })
 app.put("/messages/:id", async (req, res) => {
     const {to, text, type} = req.body
-    const from = req.headers.user || req.headers.User
+    const {from} = req.headers
     const {id} = req.params
 
     const message = {
