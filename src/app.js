@@ -28,6 +28,9 @@ const mensagemSchema = Joi.object({
     type: Joi.string().valid("message", "private_message").required(),
     time: Joi.string()
 })
+const limitSchema = Joi.object({
+
+})
 //rotas
 app.post("/participants", async (req, res) => {
     const participant = req.body
@@ -104,23 +107,25 @@ app.post("/messages", async (req, res) => {
     }
 })
 app.get("/messages", async (req, res) => {
-    const limit = Number(req.query.limit)
-    const  user  = req.headers.user || req.headers.User
-    if(limit === NaN || limit <= 0 || (typeof limit === 'string')) {
-        return res.sendStatus(422)
-    }
+    const limit = parseInt(req.query.limit)
+    const  { user } = req.headers
+    
     try {
         const messages = await db.collection("messages").find().toArray()
         const filterMessages = messages.filter(msg => {
             const { from, to, type } = msg
-            const canRead = (to === "Todos") || (from === user) || (to === user)
+            const canRead = to === "Todos" || from === user || to === user
             const isPublic = type === "message"
             return canRead || isPublic
         })
-        if(limit && limit !== NaN) {
+        if(limit && limit !== NaN && limit > 0 || typeof limit === 'string') {
             return res.send(filterMessages.slice(-limit))
+        } else if(isNaN(limit) || limit <= 0){
+            return res.sendStatus(422)
+        } else {
+            res.send(filterMessages)
         }
-        res.send(filterMessages)
+        
     } catch (error) {
         res.status(500).send(error.message)
     }
